@@ -22,7 +22,7 @@ if exist "C:\Users\%USERNAME%\anaconda3\python.exe" (
 echo.
 echo 🚀 메인 애플리케이션 시작 중...
 echo.
-echo 📍 서버 주소: http://localhost:8080
+echo 📍 서버 주소: http://localhost:8888
 echo 🛑 종료하려면: Ctrl+C
 echo.
 echo ========================================

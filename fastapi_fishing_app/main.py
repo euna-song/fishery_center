@@ -254,4 +254,10 @@ async def get_statistics(
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8080, reload=True)
+    print("=" * 50)
+    print("🚢 FastAPI 어선 항적 시각화 서버 시작")
+    print("=" * 50)
+    print("📍 서버 주소: http://localhost:8888")
+    print("🛑 종료: Ctrl+C")
+    print("=" * 50)
+    uvicorn.run(app, host="0.0.0.0", port=8888)
