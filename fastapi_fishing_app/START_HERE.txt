@@ -1,0 +1,77 @@
+========================================
+  🚀 FastAPI 어선 항적 시각화 시작 가이드
+========================================
+
+⚠️ pip 오류가 발생했다면 이 방법을 사용하세요!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 방법 1: Anaconda Prompt 사용 (추천)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. 윈도우 검색창에 "Anaconda Prompt" 입력
+2. Anaconda Prompt 실행 (관리자 권한 권장)
+3. 다음 명령어를 **순서대로** 입력:
+
+   cd C:\Users\User\fishery_center\fastapi_fishing_app
+
+   pip install fastapi uvicorn pandas pydantic
+
+   python main.py
+
+4. "Uvicorn running on http://0.0.0.0:8080" 메시지가 나타나면 성공!
+5. 브라우저에서 http://localhost:8080 접속
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 방법 2: Anaconda Navigator 사용
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Anaconda Navigator 실행
+2. "Environments" 클릭
+3. "base (root)" 선택
+4. "Open Terminal" 클릭
+5. 터미널에서 위 명령어 실행
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 방법 3: 빠른 시작 (환경변수 설정 후)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+환경변수 PATH에 Anaconda 추가:
+
+1. 윈도우 검색 → "환경 변수" 검색
+2. "시스템 환경 변수 편집" 클릭
+3. "환경 변수" 버튼 클릭
+4. "Path" 선택 → "편집" 클릭
+5. "새로 만들기"로 다음 경로 추가:
+
+   C:\Users\User\anaconda3
+   C:\Users\User\anaconda3\Scripts
+   C:\Users\User\anaconda3\Library\bin
+
+   (또는 Anaconda가 설치된 실제 경로)
+
+6. 확인 클릭
+7. CMD 재시작 후 simple_run.bat 실행
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔍 Anaconda 설치 경로 찾기
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+일반적인 Anaconda 설치 경로:
+- C:\Users\User\anaconda3
+- C:\ProgramData\Anaconda3
+- C:\Users\User\AppData\Local\Continuum\anaconda3
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ 성공 확인
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+서버가 정상 실행되면:
+✓ "INFO: Uvicorn running on http://0.0.0.0:8080"
+✓ 브라우저에서 지도 UI 표시
+✓ 좌측에 "시스템 상태: ✅ 정상" 표시
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+❓ 여전히 안 되나요?
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+INSTALL.md 파일을 열어서 상세한 문제 해결 방법을 확인하세요.
