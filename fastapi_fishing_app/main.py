@@ -6,9 +6,10 @@ Streamlit에서 FastAPI로 변환
 """
 
 from fastapi import FastAPI, HTTPException, Query
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+from io import StringIO
 from typing import List, Optional
 from datetime import datetime, date
 import sqlite3
@@ -244,6 +245,125 @@ async def get_trajectory_data(request: DataRequest):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"항적 데이터 조회 실패: {str(e)}")
+
+@app.get("/api/download/mmsi")
+async def download_mmsi_csv(
+    start_date: str,
+    end_date: str,
+    start_hour: int = 0,
+    end_hour: int = 23,
+    limit: int = 1000
+):
+    """MMSI 목록을 CSV 파일로 다운로드"""
+    try:
+        conn = connect_db()
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' LIMIT 1")
+        table_name = cursor.fetchone()[0]
+
+        start_datetime = f"{start_date} {start_hour:02d}:00:00"
+        end_datetime = f"{end_date} {end_hour:02d}:59:59"
+
+        query = f"""
+            SELECT mmsi, COUNT(*) as count
+            FROM {table_name}
+            WHERE datetime >= ? AND datetime <= ?
+              AND mmsi != 0
+            GROUP BY mmsi
+            ORDER BY count DESC
+            LIMIT ?
+        """
+
+        df = pd.read_sql_query(query, conn, params=[start_datetime, end_datetime, limit])
+        conn.close()
+
+        # CSV로 변환
+        output = StringIO()
+        df.to_csv(output, index=False, encoding='utf-8-sig')
+        output.seek(0)
+
+        filename = f"mmsi_list_{start_date}_{end_date}.csv"
+
+        return StreamingResponse(
+            iter([output.getvalue()]),
+            media_type="text/csv",
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"CSV 다운로드 실패: {str(e)}")
+
+@app.post("/api/download/trajectory")
+async def download_trajectory_csv(request: DataRequest):
+    """항적 데이터를 CSV 파일로 다운로드"""
+    try:
+        conn = connect_db()
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' LIMIT 1")
+        table_name = cursor.fetchone()[0]
+
+        start_datetime = f"{request.start_date} {request.start_hour:02d}:00:00"
+        end_datetime = f"{request.end_date} {request.end_hour:02d}:59:59"
+
+        # MMSI 필터
+        mmsi_filter = ""
+        params = [start_datetime, end_datetime]
+
+        if request.mmsi_list:
+            placeholders = ','.join(['?'] * len(request.mmsi_list))
+            mmsi_filter = f"AND mmsi IN ({placeholders})"
+            params.extend(request.mmsi_list)
+
+        # Status 필터
+        status_placeholders = ','.join(['?'] * len(request.status_list))
+        params.extend(request.status_list)
+
+        query = f"""
+            SELECT mmsi, datetime, lat, lon, status, sog, cog, heading
+            FROM {table_name}
+            WHERE datetime >= ? AND datetime <= ?
+            {mmsi_filter}
+            AND status IN ({status_placeholders})
+            AND mmsi != 0
+            ORDER BY mmsi, datetime
+        """
+
+        df = pd.read_sql_query(query, conn, params=params)
+        conn.close()
+
+        if not df.empty:
+            # 좌표 변환
+            df['lat'] = df['lat'] / 10000000.0
+            df['lon'] = df['lon'] / 10000000.0
+            df['sog'] = df['sog'] / 10.0
+            df['cog'] = df['cog'] / 10.0
+
+            # 유효한 좌표만 필터링
+            df = df[
+                (df['lat'] >= 30) & (df['lat'] <= 45) &
+                (df['lon'] >= 120) & (df['lon'] <= 135)
+            ]
+
+            # Status 이름 추가
+            df['status_name'] = df['status'].apply(lambda s: '조업' if s == 1 else '비조업')
+
+        # CSV로 변환
+        output = StringIO()
+        df.to_csv(output, index=False, encoding='utf-8-sig')
+        output.seek(0)
+
+        filename = f"trajectory_{request.start_date}_{request.end_date}.csv"
+
+        return StreamingResponse(
+            iter([output.getvalue()]),
+            media_type="text/csv",
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"CSV 다운로드 실패: {str(e)}")
 
 @app.get("/api/stats")
 async def get_statistics(

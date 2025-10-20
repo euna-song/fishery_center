@@ -232,6 +232,12 @@
 
             <button class="btn" onclick="loadMMSIList()">📥 MMSI 불러오기</button>
 
+            <div id="download-mmsi-section" style="display: none; margin-bottom: 20px;">
+                <button class="btn" onclick="downloadMMSICSV()" style="background: #4caf50;">
+                    📊 MMSI 목록 CSV 다운로드
+                </button>
+            </div>
+
             <div id="mmsi-section" style="display: none;">
                 <div class="form-group">
                     <label>🚢 선박 선택</label>
@@ -247,6 +253,10 @@
                 </div>
 
                 <button class="btn" onclick="loadTrajectoryData()">🗺️ 시각화 실행</button>
+
+                <button class="btn" onclick="downloadTrajectoryCSV()" style="background: #ff9800; margin-top: 10px;">
+                    📥 항적 데이터 CSV 다운로드
+                </button>
             </div>
 
             <div id="stats-section" style="display: none;" class="stats-card">
@@ -339,6 +349,7 @@
                 `).join('');
 
                 document.getElementById('mmsi-section').style.display = 'block';
+                document.getElementById('download-mmsi-section').style.display = 'block';
             } catch (error) {
                 alert('MMSI 로드 실패: ' + error.message);
             }
@@ -445,6 +456,82 @@
 
             } catch (error) {
                 alert('데이터 로드 실패: ' + error.message);
+            }
+        }
+
+        // MMSI CSV 다운로드
+        function downloadMMSICSV() {
+            const startDate = document.getElementById('start-date').value;
+            const endDate = document.getElementById('end-date').value;
+            const startHour = parseInt(document.getElementById('start-hour').value);
+            const endHour = parseInt(document.getElementById('end-hour').value);
+
+            const url = `/api/download/mmsi?start_date=${startDate}&end_date=${endDate}&start_hour=${startHour}&end_hour=${endHour}&limit=1000`;
+
+            // 다운로드 링크 생성 및 클릭
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `mmsi_list_${startDate}_${endDate}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+
+            alert('CSV 파일 다운로드가 시작되었습니다!');
+        }
+
+        // 항적 데이터 CSV 다운로드
+        async function downloadTrajectoryCSV() {
+            const startDate = document.getElementById('start-date').value;
+            const endDate = document.getElementById('end-date').value;
+            const startHour = parseInt(document.getElementById('start-hour').value);
+            const endHour = parseInt(document.getElementById('end-hour').value);
+            const samplingStep = parseInt(document.getElementById('sampling-step').value);
+
+            // 선택된 MMSI 수집
+            const selectedMMSI = [];
+            document.querySelectorAll('#mmsi-list input:checked').forEach(cb => {
+                selectedMMSI.push(cb.value);
+            });
+
+            if (selectedMMSI.length === 0) {
+                alert('최소 1개의 선박을 선택하세요.');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/download/trajectory', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        start_date: startDate,
+                        end_date: endDate,
+                        start_hour: startHour,
+                        end_hour: endHour,
+                        mmsi_list: selectedMMSI,
+                        status_list: [1, 2],
+                        sampling_step: samplingStep
+                    })
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `trajectory_${startDate}_${endDate}.csv`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+
+                    alert('CSV 파일 다운로드 완료!');
+                } else {
+                    alert('CSV 다운로드 실패: ' + response.statusText);
+                }
+            } catch (error) {
+                alert('CSV 다운로드 실패: ' + error.message);
             }
         }
 
