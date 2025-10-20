@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚢 어선 항적 시각화 (독립 실행)</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .container {
+            display: flex;
+            height: calc(100vh - 100px);
+        }
+
+        .sidebar {
+            width: 350px;
+            background: white;
+            padding: 20px;
+            overflow-y: auto;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 20px;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            width: 100%;
+            margin-bottom: 10px;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3);
+        }
+
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+
+        .alert-info {
+            background: #e3f2fd;
+            color: #1976d2;
+            border-left: 4px solid #1976d2;
+        }
+
+        .alert-warning {
+            background: #fff3e0;
+            color: #f57c00;
+            border-left: 4px solid #f57c00;
+        }
+
+        .code {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚢 어선 항적 시각화 시스템</h1>
+        <p>FastAPI 서버 연결 필요</p>
+    </div>
+
+    <div class="container">
+        <div class="sidebar">
+            <div class="alert alert-warning">
+                <h3>⚠️ FastAPI 서버가 필요합니다</h3>
+                <p style="margin-top: 10px;">이 애플리케이션을 사용하려면 백엔드 서버를 실행해야 합니다.</p>
+            </div>
+
+            <h2>🚀 실행 방법</h2>
+
+            <div class="form-group">
+                <label>1️⃣ Python 설치 확인</label>
+                <div class="code">python --version</div>
+            </div>
+
+            <div class="form-group">
+                <label>2️⃣ 의존성 설치</label>
+                <div class="code">
+                    cd C:\Users\User\fishery_center\fastapi_fishing_app<br>
+                    pip install fastapi uvicorn pandas pydantic
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>3️⃣ 서버 실행</label>
+                <div class="code">
+                    python main.py
+                </div>
+                <p style="margin-top: 10px; font-size: 13px; color: #666;">
+                    또는 run.bat 파일을 더블클릭하세요
+                </p>
+            </div>
+
+            <div class="form-group">
+                <label>4️⃣ 브라우저 접속</label>
+                <div class="code">
+                    http://localhost:8080
+                </div>
+            </div>
+
+            <div class="alert alert-info" style="margin-top: 30px;">
+                <h3>📝 참고사항</h3>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li>데이터베이스 경로: C:\Users\User\Desktop\fishing_trajectory.db</li>
+                    <li>서버 포트: 8080</li>
+                    <li>프로젝트 경로: C:\Users\User\fishery_center\fastapi_fishing_app</li>
+                </ul>
+            </div>
+
+            <h2 style="margin-top: 30px;">🔧 문제 해결</h2>
+
+            <div class="form-group">
+                <label>Python이 설치되지 않은 경우</label>
+                <p style="font-size: 13px; color: #666;">
+                    <a href="https://www.python.org/downloads/" target="_blank">python.org</a>에서 Python 3.8 이상을 설치하세요
+                </p>
+            </div>
+
+            <div class="form-group">
+                <label>포트 충돌 시</label>
+                <div class="code">
+                    uvicorn main:app --port 8081
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div id="map" style="display: flex; align-items: center; justify-content: center; background: #f0f0f0;">
+                <div style="text-align: center; color: #666;">
+                    <h2>🗺️ 지도 영역</h2>
+                    <p style="margin-top: 10px;">FastAPI 서버를 실행하면 여기에 인터랙티브 지도가 표시됩니다</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+</body>
+</html>

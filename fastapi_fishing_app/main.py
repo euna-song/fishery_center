@@ -69,7 +69,8 @@ def connect_db():
 @app.get("/", response_class=HTMLResponse)
 async def root():
     """메인 페이지 - 인터랙티브 지도 UI"""
-    with open("templates/index.html", "r", encoding="utf-8") as f:
+    html_path = os.path.join(os.path.dirname(__file__), "templates", "index.html")
+    with open(html_path, "r", encoding="utf-8") as f:
         return f.read()
 
 @app.get("/api/health")
