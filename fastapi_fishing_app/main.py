@@ -1,8 +1,8 @@
 """
 FastAPI 어선 항적 시각화 애플리케이션
 Streamlit에서 FastAPI로 변환
-데이터베이스: C:\Users\User\Desktop\fishing_trajectory.db
-사용자 요청: streamlit 말고 fastAPI로 만들고 싶어. 데이터는 C:\Users\User\Desktop\fishing_trafectory.db에서 가져올거야
+데이터베이스 경로: fishing_trajectory.db
+사용자 요청: Streamlit을 FastAPI로 변환
 """
 
 from fastapi import FastAPI, HTTPException, Query
