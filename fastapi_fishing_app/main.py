@@ -149,15 +149,27 @@ async def get_mmsi_list(
 async def get_trajectory_data(request: DataRequest):
     """항적 데이터 조회"""
     try:
+        print(f"\n{'='*60}")
+        print(f"📊 항적 데이터 조회 시작")
+        print(f"{'='*60}")
+        print(f"요청 정보:")
+        print(f"  - 날짜: {request.start_date} ~ {request.end_date}")
+        print(f"  - 시간: {request.start_hour}:00 ~ {request.end_hour}:00")
+        print(f"  - MMSI: {request.mmsi_list}")
+        print(f"  - Status: {request.status_list}")
+        print(f"  - Sampling: {request.sampling_step}")
+
         conn = connect_db()
         cursor = conn.cursor()
 
         # 테이블 확인
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table' LIMIT 1")
         table_name = cursor.fetchone()[0]
+        print(f"  - 테이블: {table_name}")
 
         start_datetime = f"{request.start_date} {request.start_hour:02d}:00:00"
         end_datetime = f"{request.end_date} {request.end_hour:02d}:59:59"
+        print(f"  - 검색 기간: {start_datetime} ~ {end_datetime}")
 
         # MMSI 필터
         mmsi_filter = ""
@@ -185,6 +197,9 @@ async def get_trajectory_data(request: DataRequest):
         df = pd.read_sql_query(query, conn, params=params)
         conn.close()
 
+        print(f"\n결과:")
+        print(f"  - 원본 데이터: {len(df)}개")
+
         # 샘플링
         if not df.empty:
             df_sampled = df[df['rn'] % request.sampling_step == 1].copy()
@@ -204,6 +219,10 @@ async def get_trajectory_data(request: DataRequest):
 
             df_sampled['status_name'] = df_sampled['status'].apply(lambda s: '조업' if s == 1 else '비조업')
 
+            print(f"  - 샘플링 후: {len(df_sampled)}개")
+            print(f"  - MMSI 필터링 후: {len(df_sampled[df_sampled['mmsi'] != 0])}개")
+            print(f"  - 좌표 유효성 검사 후: {len(df_sampled)}개")
+
             result = []
             for _, row in df_sampled.iterrows():
                 result.append({
@@ -215,8 +234,12 @@ async def get_trajectory_data(request: DataRequest):
                     "status_name": row['status_name']
                 })
 
+            print(f"  - 최종 반환: {len(result)}개")
+            print(f"{'='*60}\n")
             return result
 
+        print(f"  ⚠️ 데이터 없음!")
+        print(f"{'='*60}\n")
         return []
 
     except Exception as e:
