@@ -128,6 +128,7 @@ async def get_mmsi_list(
             SELECT mmsi, COUNT(*) as count
             FROM {table_name}
             WHERE datetime >= ? AND datetime <= ?
+              AND mmsi != 0
             GROUP BY mmsi
             ORDER BY count DESC
             LIMIT ?
@@ -136,7 +137,9 @@ async def get_mmsi_list(
         df = pd.read_sql_query(query, conn, params=[start_datetime, end_datetime, limit])
         conn.close()
 
-        result = [{"mmsi": str(row['mmsi']), "count": int(row['count'])} for _, row in df.iterrows()]
+        # MMSI 0 제외
+        result = [{"mmsi": str(row['mmsi']), "count": int(row['count'])}
+                  for _, row in df.iterrows() if row['mmsi'] != 0]
         return result
 
     except Exception as e:
@@ -185,6 +188,20 @@ async def get_trajectory_data(request: DataRequest):
         # 샘플링
         if not df.empty:
             df_sampled = df[df['rn'] % request.sampling_step == 1].copy()
+
+            # 좌표 변환 (정수 -> 실수)
+            df_sampled['lat'] = df_sampled['lat'] / 10000000.0
+            df_sampled['lon'] = df_sampled['lon'] / 10000000.0
+
+            # MMSI 0 필터링 (유효하지 않은 데이터)
+            df_sampled = df_sampled[df_sampled['mmsi'] != 0]
+
+            # 유효한 좌표만 필터링 (위도: 30-45, 경도: 120-135)
+            df_sampled = df_sampled[
+                (df_sampled['lat'] >= 30) & (df_sampled['lat'] <= 45) &
+                (df_sampled['lon'] >= 120) & (df_sampled['lon'] <= 135)
+            ]
+
             df_sampled['status_name'] = df_sampled['status'].apply(lambda s: '조업' if s == 1 else '비조업')
 
             result = []
