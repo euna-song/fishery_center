@@ -64,14 +64,22 @@ def get_change_history():
         with open(self.version_file, 'w', encoding='utf-8') as f:
             f.write(content)
 
-    def log_action(self, action_type, description, details=None):
-        """작업 로깅"""
+    def log_action(self, action_type, description, details=None, user_request=None):
+        """작업 로깅
+
+        Args:
+            action_type: 작업 유형
+            description: 작업 설명
+            details: 상세 정보 딕셔너리
+            user_request: 사용자 요청 사항
+        """
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         log_entry = {
             "timestamp": timestamp,
             "action": action_type,
             "description": description,
+            "user_request": user_request or "",
             "details": details or {}
         }
 
@@ -127,9 +135,17 @@ def get_change_history():
             print(f"[ERROR] Git 작업 실패: {e}")
             return False
 
-    def log_and_commit(self, action_type, description, details=None, commit_message=None):
-        """작업을 로깅하고 자동으로 커밋"""
-        log_entry = self.log_action(action_type, description, details)
+    def log_and_commit(self, action_type, description, details=None, commit_message=None, user_request=None):
+        """작업을 로깅하고 자동으로 커밋
+
+        Args:
+            action_type: 작업 유형
+            description: 작업 설명
+            details: 상세 정보 딕셔너리
+            commit_message: 커밋 메시지
+            user_request: 사용자 요청 사항
+        """
+        log_entry = self.log_action(action_type, description, details, user_request)
 
         if not commit_message:
             commit_message = f"{action_type}: {description}"
@@ -143,49 +159,149 @@ def get_change_history():
 logger = ActionLogger()
 
 # 편의 함수들
-def log_file_create(filename, description=""):
-    """파일 생성 로깅"""
+def log_file_create(filename, description="", user_request=None):
+    """파일 생성 로깅
+
+    Args:
+        filename: 파일명
+        description: 작업 설명
+        user_request: 사용자 요청 사항
+    """
     return logger.log_and_commit(
         "FILE_CREATE",
         description or f"Created file: {filename}",
-        {"filename": filename}
+        {"filename": filename},
+        user_request=user_request
     )
 
-def log_file_modify(filename, description=""):
-    """파일 수정 로깅"""
+def log_file_modify(filename, description="", user_request=None):
+    """파일 수정 로깅
+
+    Args:
+        filename: 파일명
+        description: 작업 설명
+        user_request: 사용자 요청 사항
+    """
     return logger.log_and_commit(
         "FILE_MODIFY",
         description or f"Modified file: {filename}",
-        {"filename": filename}
+        {"filename": filename},
+        user_request=user_request
     )
 
-def log_file_delete(filename, description=""):
-    """파일 삭제 로깅"""
+def log_file_delete(filename, description="", user_request=None):
+    """파일 삭제 로깅
+
+    Args:
+        filename: 파일명
+        description: 작업 설명
+        user_request: 사용자 요청 사항
+    """
     return logger.log_and_commit(
         "FILE_DELETE",
         description or f"Deleted file: {filename}",
-        {"filename": filename}
+        {"filename": filename},
+        user_request=user_request
     )
 
-def log_command(command, description=""):
-    """명령어 실행 로깅"""
+def log_command(command, description="", user_request=None):
+    """명령어 실행 로깅
+
+    Args:
+        command: 실행한 명령어
+        description: 작업 설명
+        user_request: 사용자 요청 사항
+    """
     return logger.log_and_commit(
         "COMMAND",
         description or f"Executed command: {command}",
-        {"command": command}
+        {"command": command},
+        user_request=user_request
     )
 
-def log_error(error_message, description=""):
-    """에러 로깅"""
+def log_error(error_message, description="", user_request=None):
+    """에러 로깅
+
+    Args:
+        error_message: 에러 메시지
+        description: 작업 설명
+        user_request: 사용자 요청 사항
+    """
     return logger.log_and_commit(
         "ERROR",
         description or f"Error occurred: {error_message}",
-        {"error": error_message}
+        {"error": error_message},
+        user_request=user_request
     )
 
-def log_custom(action_type, description, details=None):
-    """커스텀 로깅"""
-    return logger.log_and_commit(action_type, description, details)
+def log_custom(action_type, description, details=None, user_request=None):
+    """커스텀 로깅
+
+    Args:
+        action_type: 작업 유형
+        description: 작업 설명
+        details: 상세 정보 딕셔너리
+        user_request: 사용자 요청 사항
+    """
+    return logger.log_and_commit(action_type, description, details, user_request=user_request)
+
+
+def write_file_with_header(filepath, content, user_request=None, author="euna-song"):
+    """파일을 작성하고 상단에 헤더 주석 추가
+
+    Args:
+        filepath: 파일 경로
+        content: 파일 내용
+        user_request: 사용자 요청 사항
+        author: 작성자명
+    """
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    filename = os.path.basename(filepath)
+
+    # 파일 확장자에 따라 주석 스타일 결정
+    ext = os.path.splitext(filepath)[1].lower()
+    if ext in ['.py']:
+        comment_start = '"""'
+        comment_end = '"""'
+        line_comment = '#'
+    elif ext in ['.js', '.java', '.cpp', '.c', '.h']:
+        comment_start = '/*'
+        comment_end = '*/'
+        line_comment = '//'
+    elif ext in ['.html', '.xml']:
+        comment_start = '<!--'
+        comment_end = '-->'
+        line_comment = '<!--'
+    else:
+        comment_start = '#'
+        comment_end = '#'
+        line_comment = '#'
+
+    # 헤더 생성
+    header = f'''{comment_start}
+File: {filename}
+Created: {timestamp}
+Author: {author}
+User Request: {user_request or "N/A"}
+Description: {content.split(chr(10))[0] if content else ""}
+{comment_end}
+
+'''
+
+    # 파일 작성
+    full_content = header + content
+    with open(filepath, 'w', encoding='utf-8') as f:
+        f.write(full_content)
+
+    # 로깅
+    log_file_create(
+        filename,
+        f"Created file with header: {filename}",
+        user_request=user_request
+    )
+
+    print(f"[SUCCESS] File created with header: {filepath}")
+    return filepath
 
 
 if __name__ == "__main__":
