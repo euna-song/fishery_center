@@ -181,9 +181,10 @@ async def get_trajectory_data(request: DataRequest):
             mmsi_filter = f"AND mmsi IN ({placeholders})"
             params.extend(request.mmsi_list)
 
-        # Status 필터
-        status_placeholders = ','.join(['?'] * len(request.status_list))
-        params.extend(request.status_list)
+        # Status 필터 (값에서 1씩 빼서 0-based로 변환)
+        status_values = [s - 1 for s in request.status_list]
+        status_placeholders = ','.join(['?'] * len(status_values))
+        params.extend(status_values)
 
         query = f"""
             SELECT mmsi, datetime, lat, lon, status,
@@ -196,6 +197,10 @@ async def get_trajectory_data(request: DataRequest):
         """
 
         df = pd.read_sql_query(query, conn, params=params)
+        debug_query = query
+        for param in params:
+            debug_query = debug_query.replace('?', f"'{param}'", 1)
+        print(f"  - 실행 쿼리: {debug_query}")
         conn.close()
 
         print(f"\n결과:")
@@ -316,9 +321,10 @@ async def download_trajectory_csv(request: DataRequest):
             mmsi_filter = f"AND mmsi IN ({placeholders})"
             params.extend(request.mmsi_list)
 
-        # Status 필터
-        status_placeholders = ','.join(['?'] * len(request.status_list))
-        params.extend(request.status_list)
+        # Status 필터 (값에서 1씩 빼서 0-based로 변환)
+        status_values = [s - 1 for s in request.status_list]
+        status_placeholders = ','.join(['?'] * len(status_values))
+        params.extend(status_values)
 
         query = f"""
             SELECT mmsi, datetime, lat, lon, status, sog, cog, heading
